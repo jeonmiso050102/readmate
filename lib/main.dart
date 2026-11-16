@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
@@ -9,6 +10,8 @@ import 'screens/decorate_screen.dart';
 import 'screens/finished_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_shell.dart';
+import 'screens/manual_done_screen.dart';
+import 'screens/manual_record_screen.dart';
 import 'screens/recap_screen.dart';
 import 'screens/record_screen.dart';
 import 'screens/reward_screen.dart';
@@ -35,8 +38,10 @@ class Routes {
   static const record = '/record'; // 06
   static const reward = '/reward'; // 07
   static const recap = '/recap'; // 08
-  static const finished = '/finished'; // 09
+  static const finished = '/finished'; // 09 (arguments: Book, 없으면 지금 읽는 책)
   static const decorate = '/decorate'; // 10
+  static const manualRecord = '/manual-record'; // 12
+  static const manualDone = '/manual-done'; // 13 (arguments: ManualRecordResult)
 }
 
 class ReadMateApp extends StatelessWidget {
@@ -53,6 +58,14 @@ class ReadMateApp extends StatelessWidget {
         title: '리드메이트',
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(),
+        // 날짜 선택 창 등을 한국어로
+        locale: const Locale('ko', 'KR'),
+        supportedLocales: const [Locale('ko', 'KR')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         home: const AuthGate(),
         routes: {
           Routes.login: (_) => const LoginScreen(),
@@ -68,6 +81,8 @@ class ReadMateApp extends StatelessWidget {
           Routes.recap: (_) => const RecapScreen(),
           Routes.finished: (_) => const FinishedScreen(),
           Routes.decorate: (_) => const DecorateScreen(),
+          Routes.manualRecord: (_) => const ManualRecordScreen(),
+          Routes.manualDone: (_) => const ManualDoneScreen(),
         },
       ),
     );

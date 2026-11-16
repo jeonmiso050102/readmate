@@ -18,7 +18,8 @@ class FinishedScreen extends StatefulWidget {
 class _FinishedScreenState extends State<FinishedScreen> {
   // 화면을 연 순간의 책을 기억해 둠 ('책장에 꽂기' 후 current가 다음 책으로 바뀌어도 그대로 보이게)
   late final Book? _book = () {
-    final b = context.read<ReadingState>().current;
+    final arg = ModalRoute.of(context)?.settings.arguments;
+    final b = arg is Book ? arg : context.read<ReadingState>().current;
     if (b == null) return null;
     return Book(
       id: b.id,
@@ -44,7 +45,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
           PrimaryButton(
             label: '책장에 꽂기',
             onPressed: () {
-              s.shelveCurrent();
+              s.shelveBook(book);
               goHome(context);
             },
           ),
@@ -52,7 +53,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
           GhostButton(
             label: '다음 책 고르기',
             onPressed: () {
-              s.shelveCurrent();
+              s.shelveBook(book);
               goHome(context, tab: 1);
             },
           ),

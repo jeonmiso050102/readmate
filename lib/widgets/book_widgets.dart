@@ -19,9 +19,9 @@ class ProgressBook extends StatelessWidget {
         height: 122,
         child: LayoutBuilder(builder: (context, c) {
           final w = c.maxWidth;
-          final edge = (w * book.progress).clamp(14.0, w);
+          final double edge = (w * book.progress).clamp(14.0, w).toDouble();
           const pillW = 115.0;
-          final pillLeft = (edge - pillW / 2).clamp(0.0, w - pillW);
+          final double pillLeft = (edge - pillW / 2).clamp(0.0, w - pillW).toDouble();
           return Stack(
             clipBehavior: Clip.none,
             children: [
@@ -52,12 +52,10 @@ class ProgressBook extends StatelessWidget {
                 right: 0,
                 top: 34,
                 height: 70,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.card,
-                    border: Border.all(color: AppColors.border, width: 1.5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                child: const DashedBox(
+                  color: AppColors.card,
+                  borderColor: AppColors.border,
+                  radius: 8,
                 ),
               ),
               // 책 페이지 단면
@@ -82,7 +80,7 @@ class ProgressBook extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 400),
                   decoration: BoxDecoration(
-                    color: AppColors.checkbox,
+                    color: book.color,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -112,7 +110,7 @@ class ProgressBook extends StatelessWidget {
                   top: 34,
                   width: 1.5,
                   height: 70,
-                  child: const ColoredBox(color: AppColors.primary),
+                  child: const CustomPaint(painter: _DashedVLinePainter()),
                 ),
               Positioned(left: 0, bottom: 0, child: Text('시작', style: AppText.caption)),
               Positioned(right: 0, bottom: 0, child: Text('완료', style: AppText.caption)),
@@ -124,13 +122,17 @@ class ProgressBook extends StatelessWidget {
   }
 }
 
-/// '쌓인 책' 컴포넌트 (높이 46, 표지 색 배경)
+/// '쌓인 책' 컴포넌트 (높이 46)
+///
+/// [progress]만큼 왼쪽부터 표지 색이 **불투명**하게 채워지고,
+/// 아직 안 읽은 부분은 **반투명** + 점선 테두리로 보여요.
 class StackedBook extends StatelessWidget {
   const StackedBook({
     super.key,
     required this.title,
     required this.trailing,
     required this.color,
+    this.progress = 1,
     this.width,
     this.selected = false,
     this.onTap,
@@ -140,6 +142,7 @@ class StackedBook extends StatelessWidget {
   final String title;
   final String trailing;
   final Color color;
+  final double progress; // 0~1
   final double? width;
   final bool selected;
   final VoidCallback? onTap;
@@ -147,32 +150,81 @@ class StackedBook extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = progress.clamp(0.0, 1.0).toDouble();
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+      child: Container(
         width: width,
         height: 46,
-        padding: const EdgeInsets.only(left: 20, right: 14),
         decoration: BoxDecoration(
-          color: color,
           borderRadius: BorderRadius.circular(6),
-          border: selected ? Border.all(color: AppColors.primary, width: 2) : null,
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF734D26).withOpacity(0.18),
+              color: const Color(0xFF734D26).withValues(alpha: 0.18),
               offset: const Offset(0, 2),
               blurRadius: 3,
             ),
           ],
         ),
-        child: Row(
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
-              child: Text(title, style: AppText.label, overflow: TextOverflow.ellipsis),
+            // 안 읽은 부분: 반투명
+            DashedBox(
+              color: Color.alphaBlend(color.withValues(alpha: 0.35), AppColors.card),
+              borderColor: p < 1 ? color : Colors.transparent,
+              radius: 6,
             ),
-            Text(trailing, style: AppText.caption.copyWith(color: AppColors.text)),
+            // 읽은 부분: 불투명
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(end: p),
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, v, _) => FractionallySizedBox(
+                    widthFactor: v,
+                    heightFactor: 1,
+                    child: ColoredBox(color: color),
+                  ),
+                ),
+              ),
+            ),
+            if (p > 0 && p < 1)
+              LayoutBuilder(
+                builder: (context, c) => Padding(
+                  padding: EdgeInsets.only(left: c.maxWidth * p - 0.75),
+                  child: const Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 1.5,
+                      height: 46,
+                      child: CustomPaint(painter: _DashedVLinePainter()),
+                    ),
+                  ),
+                ),
+              ),
+            if (selected)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.primary, width: 2),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 20, right: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(title, style: AppText.label, overflow: TextOverflow.ellipsis),
+                  ),
+                  Text(trailing, style: AppText.caption.copyWith(color: AppColors.text)),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -180,7 +232,81 @@ class StackedBook extends StatelessWidget {
   }
 }
 
-/// '캐릭터 책장' 컴포넌트: 큰 새싹이 몸체 안에 책장이 들어 있음 (원본 345x340)
+/// 점선 테두리가 있는 둥근 사각형 (Figma의 '남은 부분', '빈 자리')
+class DashedBox extends StatelessWidget {
+  const DashedBox({
+    super.key,
+    required this.color,
+    required this.borderColor,
+    this.radius = 8,
+    this.strokeWidth = 1.5,
+  });
+
+  final Color color;
+  final Color borderColor;
+  final double radius;
+  final double strokeWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DashedRRectPainter(color, borderColor, radius, strokeWidth),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _DashedRRectPainter extends CustomPainter {
+  _DashedRRectPainter(this.color, this.borderColor, this.radius, this.strokeWidth);
+  final Color color;
+  final Color borderColor;
+  final double radius;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      (Offset.zero & size).deflate(strokeWidth / 2),
+      Radius.circular(radius),
+    );
+    canvas.drawRRect(rrect, Paint()..color = color);
+    final stroke = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    for (final metric in (Path()..addRRect(rrect)).computeMetrics()) {
+      var d = 0.0;
+      while (d < metric.length) {
+        canvas.drawPath(metric.extractPath(d, d + 5), stroke);
+        d += 9;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter old) =>
+      old.color != color || old.borderColor != borderColor;
+}
+
+/// 세로 점선 (현재 읽은 위치)
+class _DashedVLinePainter extends CustomPainter {
+  const _DashedVLinePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.primary
+      ..strokeWidth = size.width;
+    final x = size.width / 2;
+    for (var y = 0.0; y < size.height; y += 8) {
+      canvas.drawLine(Offset(x, y), Offset(x, (y + 4).clamp(0, size.height).toDouble()), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class CharacterShelf extends StatelessWidget {
   const CharacterShelf({
     super.key,
@@ -195,42 +321,98 @@ class CharacterShelf extends StatelessWidget {
   final bool highlightLast; // 09 완독: 방금 꽂은 책 테두리
   final String? bubble;
 
-  static const _heights = [56.0, 48.0, 58.0, 50.0, 54.0, 46.0, 52.0];
-  static const _widths = [24.0, 20.0, 26.0, 22.0, 24.0, 20.0, 22.0];
-  static const _perRow = 7;
+  // 책장 크기 (캔버스 345x380 기준): 새싹이 몸 아래로 조금 내려오도록 키움
+  static const _canvasH = 380.0;
+  static const _rowH = 96.0; // 책 칸 높이
+  static const _rowInner = 249.0; // 책 칸 안쪽 너비 (261 - 좌우 여백 12)
+  static const _decoSize = 56.0;
+  static const _gap = 3.0;
+
+  /// 책 두께: 쪽수에 비례 (100쪽 ≈ 18, 300쪽 ≈ 30, 500쪽 ≈ 42, 최대 44)
+  static double thicknessOf(Book b) => (12 + b.totalPages * 0.06).clamp(16.0, 44.0).toDouble();
+
+  /// 책 높이: 74~90 사이에서 책마다 조금씩 다르게
+  static double heightOf(Book b) => 74.0 + (b.title.hashCode.abs() % 5) * 4;
 
   @override
   Widget build(BuildContext context) {
-    final row1 = books.take(_perRow).toList();
-    final row2 = books.skip(_perRow).take(_perRow - 3).toList();
-    final emptySlots = (3 - row2.length).clamp(0, 3);
+    // 1번 칸: 두께대로 채우기
+    final row1 = <Book>[];
+    var used = 0.0;
+    var i = 0;
+    for (; i < books.length; i++) {
+      final w = thicknessOf(books[i]) + _gap;
+      if (used + w > _rowInner) break;
+      row1.add(books[i]);
+      used += w;
+    }
+    // 2번 칸: 장식 자리를 남기고 채우기, 넘치면 '+N권' 표시
+    final decoW = decoration != null ? _decoSize + _gap : 0.0;
+    final rest = books.sublist(i);
+    var cap = _rowInner - decoW;
+    final restW = rest.fold<double>(0, (a, b) => a + thicknessOf(b) + _gap);
+    if (restW > cap) cap -= 40; // '+N권' 배지 자리
+    final row2 = <Book>[];
+    var used2 = 0.0;
+    for (final b in rest) {
+      final w = thicknessOf(b) + _gap;
+      if (used2 + w > cap) break;
+      row2.add(b);
+      used2 += w;
+    }
+    final hidden = rest.length - row2.length;
+    final emptySlots =
+        hidden > 0 ? 0 : ((cap - used2) / (22 + _gap)).floor().clamp(0, 3).toInt();
 
-    Widget spine(Book b, int i, bool isLast) => Container(
-          width: _widths[i % _widths.length],
-          height: _heights[i % _heights.length],
-          margin: const EdgeInsets.only(right: 3),
+    Widget spine(Book b) {
+      final w = thicknessOf(b);
+      final h = heightOf(b);
+      final fontSize = w < 20 ? 10.0 : (w < 28 ? 11.0 : 12.0);
+      final lineH = fontSize * 1.12;
+      final fit = ((h - 8) / lineH).floor();
+      final chars = b.title.replaceAll(' ', '').characters.toList();
+      final shown = chars.length <= fit ? chars : [...chars.take(fit - 1), '⋮'];
+      final highlight = highlightLast && identical(b, books.last); // 방금 꽂은 책
+      return Tooltip(
+        message: '${b.title} · ${b.totalPages}쪽',
+        triggerMode: TooltipTriggerMode.tap,
+        child: Container(
+          width: w,
+          height: h,
+          margin: const EdgeInsets.only(right: _gap),
+          padding: const EdgeInsets.only(top: 4),
           decoration: BoxDecoration(
             color: b.color,
             borderRadius: BorderRadius.circular(3),
-            border: isLast && highlightLast
-                ? Border.all(color: AppColors.primary, width: 1.7)
-                : null,
+            border: highlight ? Border.all(color: AppColors.primary, width: 1.7) : null,
           ),
-        );
+          child: Column(
+            children: [
+              for (final ch in shown)
+                Text(
+                  ch,
+                  style: AppText.caption.copyWith(
+                    fontSize: fontSize,
+                    height: 1.12,
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
 
     Widget emptySpine() => Container(
-          width: 24,
-          height: 52,
+          width: 22,
+          height: 78,
           margin: const EdgeInsets.only(right: 3),
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(3),
-            border: Border.all(color: AppColors.tan, width: 1.5),
-          ),
+          child: const DashedBox(color: AppColors.card, borderColor: AppColors.tan, radius: 3),
         );
 
     Widget shelfRow(List<Widget> children) => Container(
-          height: 66,
+          height: _rowH,
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
@@ -242,15 +424,15 @@ class CharacterShelf extends StatelessWidget {
 
     final shelf = SizedBox(
       width: 345,
-      height: 340,
+      height: _canvasH,
       child: Stack(
         children: [
           SvgPicture.asset('assets/svg/sprout_big.svg', width: 345, height: 340),
           Positioned(
-            left: 48,
-            top: 150,
-            width: 249,
-            height: 166,
+            left: 30,
+            top: 146,
+            width: 285,
+            height: 226,
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -259,17 +441,28 @@ class CharacterShelf extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  shelfRow([
-                    for (var i = 0; i < row1.length; i++)
-                      spine(row1[i], i, row2.isEmpty && i == row1.length - 1),
-                  ]),
+                  shelfRow([for (final b in row1) spine(b)]),
                   const SizedBox(height: 10),
                   shelfRow([
-                    for (var i = 0; i < row2.length; i++)
-                      spine(row2[i], i + 3, i == row2.length - 1),
-                    for (var i = 0; i < emptySlots; i++) emptySpine(),
+                    for (final b in row2) spine(b),
+                    if (hidden > 0)
+                      Container(
+                        width: 37,
+                        height: 24,
+                        margin: const EdgeInsets.only(right: _gap, bottom: 4),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '+$hidden권',
+                          style: AppText.caption.copyWith(fontSize: 10, color: AppColors.primary),
+                        ),
+                      ),
+                    for (var k = 0; k < emptySlots; k++) emptySpine(),
                     if (decoration != null)
-                      SvgPicture.asset(decoration!.asset, width: 48, height: 48),
+                      SvgPicture.asset(decoration!.asset, width: _decoSize, height: _decoSize),
                   ]),
                 ],
               ),
@@ -283,7 +476,7 @@ class CharacterShelf extends StatelessWidget {
       final scale = (c.maxWidth / 345).clamp(0.5, 1.2);
       return SizedBox(
         width: c.maxWidth,
-        height: 340 * scale,
+        height: _canvasH * scale,
         child: Stack(
           clipBehavior: Clip.none,
           children: [

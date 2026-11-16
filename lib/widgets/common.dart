@@ -37,8 +37,8 @@ class SunScaffold extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.sun.withOpacity(0.75),
-                    AppColors.sun.withOpacity(0),
+                    AppColors.sun.withValues(alpha: 0.75),
+                    AppColors.sun.withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -84,7 +84,7 @@ class PrimaryButton extends StatelessWidget {
         onPressed: loading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
+          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
           foregroundColor: AppColors.card,
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -204,7 +204,7 @@ class LabeledField extends StatelessWidget {
           cursorColor: AppColors.primary,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppText.body.copyWith(color: AppColors.subText.withOpacity(0.6)),
+            hintStyle: AppText.body.copyWith(color: AppColors.subText.withValues(alpha: 0.6)),
             suffixText: suffixText,
             suffixStyle: AppText.bodyBold.copyWith(color: AppColors.subText),
             filled: true,
@@ -285,7 +285,7 @@ class SpeechBubble extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF8C6633).withOpacity(0.16),
+                color: const Color(0xFF8C6633).withValues(alpha: 0.16),
                 offset: const Offset(0, 4),
                 blurRadius: 12,
               ),

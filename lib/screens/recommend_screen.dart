@@ -67,10 +67,12 @@ class RecommendScreen extends StatelessWidget {
                 Switch(
                   value: s.aiEnabled,
                   onChanged: s.setAiEnabled,
-                  activeColor: AppColors.card,
-                  activeTrackColor: AppColors.green,
-                  inactiveThumbColor: AppColors.card,
-                  inactiveTrackColor: AppColors.beige,
+                  thumbColor: WidgetStateProperty.all(AppColors.card),
+                  trackColor: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.selected)
+                        ? AppColors.green
+                        : AppColors.beige,
+                  ),
                   trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
                 ),
               ],

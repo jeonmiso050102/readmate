@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -52,13 +52,15 @@ class _TimerScreenState extends State<TimerScreen> {
     Navigator.of(context).pushReplacementNamed(Routes.record);
   }
 
+  /// 05 '다음에 읽기': 타이머를 멈추고 지금까지 읽은 시간만 기록
   Future<void> _giveUp() async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: Text('정말 포기할까요?', style: AppText.bodyBold),
-        content: Text('지금까지 읽은 ${_elapsedMinutes}분만 기록돼요.', style: AppText.bodySub),
+        title: Text('다음에 이어 읽을까요?', style: AppText.bodyBold),
+        content: Text('타이머가 멈추고 지금까지 읽은 $_elapsedMinutes분만 기록돼요.',
+            style: AppText.bodySub),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -66,14 +68,26 @@ class _TimerScreenState extends State<TimerScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('포기하기', style: AppText.label.copyWith(color: AppColors.subText)),
+            child: Text('다음에 읽기', style: AppText.label.copyWith(color: AppColors.subText)),
           ),
         ],
       ),
     );
     if (ok != true || !mounted) return;
     _ticker?.cancel();
-    context.read<ReadingState>().finishSession(minutes: _elapsedMinutes, completed: false);
+    final s = context.read<ReadingState>();
+    s.finishSession(minutes: _elapsedMinutes, completed: false);
+    final book = s.current;
+    if (book != null && _elapsedMinutes > 0) {
+      s.logSession(
+        book: book,
+        date: DateTime.now(),
+        minutes: _elapsedMinutes,
+        fromPage: book.currentPage,
+        toPage: book.currentPage,
+        manual: false,
+      );
+    }
     goHome(context);
   }
 
@@ -85,16 +99,16 @@ class _TimerScreenState extends State<TimerScreen> {
     final ss = (_remaining % 60).toString().padLeft(2, '0');
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _giveUp();
       },
       child: SunScaffold(
         bottom: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            OutlineButtonX(label: '포기하기', onPressed: _giveUp),
+            OutlineButtonX(label: '다음에 읽기', onPressed: _giveUp),
             const SizedBox(height: 8),
-            Text('포기하면 타이머가 멈추고 읽은 시간만 기록돼요', style: AppText.caption),
+            Text('누르면 타이머가 멈추고 지금까지 읽은 시간만 기록돼요', style: AppText.caption),
           ],
         ),
         body: Column(

@@ -51,7 +51,16 @@ class _RecordScreenState extends State<RecordScreen> {
     s.recordProgress(page: page, memo: _memo.text);
     final nav = Navigator.of(context);
     if (page >= _book.totalPages) {
-      nav.pushReplacementNamed(Routes.finished); // 09 완독
+      nav.pushReplacementNamed(
+        Routes.finished, // 09 완독
+        arguments: Book(
+          id: _book.id,
+          title: _book.title,
+          totalPages: _book.totalPages,
+          color: _book.color,
+          currentPage: _book.totalPages,
+        ),
+      );
     } else if (s.lastSessionCompleted) {
       nav.pushReplacementNamed(Routes.reward); // 07 목표 달성 보상
     } else {

@@ -16,9 +16,19 @@ class TimeSelectScreen extends StatelessWidget {
     final book = s.current;
     final presets = <int>{5, 10, 15, s.goalMinutes}.toList()..sort();
     return SunScaffold(
-      bottom: PrimaryButton(
-        label: '타이머 시작',
-        onPressed: () => Navigator.of(context).pushNamed(Routes.timer),
+      bottom: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PrimaryButton(
+            label: '타이머 시작',
+            onPressed: () => Navigator.of(context).pushNamed(Routes.timer),
+          ),
+          const SizedBox(height: 16),
+          GhostButton(
+            label: '타이머를 못 켰나요? 수동으로 기록하기',
+            onPressed: () => Navigator.of(context).pushNamed(Routes.manualRecord),
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

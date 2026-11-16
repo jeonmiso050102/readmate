@@ -64,9 +64,10 @@ class ToReadScreen extends StatelessWidget {
                   StackedBook(
                     title: books[i].title,
                     trailing: books[i].isStarted
-                        ? '${books[i].currentPage}/${books[i].totalPages}쪽'
+                        ? '${books[i].percent}% · ${books[i].currentPage}/${books[i].totalPages}쪽'
                         : '${books[i].totalPages}쪽',
                     color: books[i].color,
+                    progress: books[i].progress,
                     width: c.maxWidth * _widthRatios[i % _widthRatios.length],
                     selected: s.isCurrent(books[i]),
                     // 한 번 누르면 이번에 읽을 책으로 선택, 선택된 책을 다시 누르면 정보 수정

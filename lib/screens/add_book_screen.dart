@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../main.dart';
 import '../state/reading_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/book_widgets.dart';
@@ -60,13 +61,30 @@ class _AddBookScreenState extends State<AddBookScreen> {
     setState(() => _saving = true);
     // 저장 요청만 보내고 바로 닫아요. (Firestore가 화면에 즉시 반영하고, 서버 저장은 뒤에서 진행)
     if (_isEdit) {
+      final read = int.parse(_readPages.text);
       s.updateBook(
         _editing!,
         title: title,
         totalPages: total,
         color: color,
-        currentPage: int.parse(_readPages.text),
+        currentPage: read,
       );
+      // 읽은 쪽이 총 쪽수에 닿으면(100%) 타이머 없이도 09 완독 화면으로
+      final ed = _editing!;
+      if (read >= total && !ed.isDone) {
+        s.selectBook(ed);
+        Navigator.of(context).pushReplacementNamed(
+          Routes.finished,
+          arguments: Book(
+            id: ed.id,
+            title: title,
+            totalPages: total,
+            color: color,
+            currentPage: total,
+          ),
+        );
+        return;
+      }
     } else {
       s.addBook(title: title, totalPages: total, color: color);
     }

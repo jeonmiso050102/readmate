@@ -128,6 +128,7 @@ class ReadingState extends ChangeNotifier {
 
   DocumentReference<Map<String, dynamic>> get _userDoc => _db.collection('users').doc(_uid);
   CollectionReference<Map<String, dynamic>> get _booksCol => _userDoc.collection('books');
+  CollectionReference<Map<String, dynamic>> get _sessionsCol => _userDoc.collection('sessions');
 
   void _onUserChanged(User? user) {
     _booksSub?.cancel();
@@ -278,10 +279,53 @@ class ReadingState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 독서 기록 한 건 저장 (`users/{uid}/sessions`) — 타이머 기록과 수동 기록 모두
+  Future<void> logSession({
+    required Book book,
+    required DateTime date,
+    required int minutes,
+    required int fromPage,
+    required int toPage,
+    required bool manual,
+  }) async {
+    if (_uid == null || book.id.isEmpty) return;
+    await _sessionsCol.add({
+      'bookId': book.id,
+      'bookTitle': book.title,
+      'date': DateTime(date.year, date.month, date.day).millisecondsSinceEpoch,
+      'minutes': minutes,
+      'fromPage': fromPage,
+      'toPage': toPage,
+      'manual': manual,
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
+  /// 12 수동으로 기록하기: 진도 반영 + 기록 저장 (책장 장식 보상은 없음)
+  Future<void> recordManual({
+    required Book book,
+    required DateTime date,
+    required int minutes,
+    required int toPage,
+  }) async {
+    final from = book.currentPage;
+    final to = toPage.clamp(0, book.totalPages);
+    logSession(book: book, date: date, minutes: minutes, fromPage: from, toPage: to, manual: true);
+    await updateBook(book, currentPage: to);
+  }
+
   /// 06 독서 기록 저장
   Future<void> recordProgress({required int page, required String memo}) async {
     final book = current;
     if (book == null) return;
+    logSession(
+      book: book,
+      date: DateTime.now(),
+      minutes: lastSessionMinutes,
+      fromPage: book.currentPage,
+      toPage: page.clamp(0, book.totalPages),
+      manual: false,
+    );
     if (lastSessionCompleted) {
       lastReward = ShelfDeco.pot;
       ownedDecorations.add(ShelfDeco.pot);
@@ -305,7 +349,11 @@ class ReadingState extends ChangeNotifier {
   /// 09 완독 → 책장에 꽂기
   Future<void> shelveCurrent() async {
     final book = current;
-    if (book == null || _uid == null) return;
+    if (book != null) await shelveBook(book);
+  }
+
+  Future<void> shelveBook(Book book) async {
+    if (_uid == null || book.id.isEmpty) return;
     final next = toRead.where((b) => b.id != book.id).firstOrNull;
     _currentId = next?.id;
     _saveSettings();
