@@ -45,10 +45,14 @@ class _ManualRecordScreenState extends State<ManualRecordScreen> {
   late final _page = TextEditingController(
     text: '${context.read<ReadingState>().current?.currentPage ?? 0}',
   );
+  late final _summary = TextEditingController(
+    text: context.read<ReadingState>().current?.summary ?? '',
+  );
 
   @override
   void dispose() {
     _page.dispose();
+    _summary.dispose();
     super.dispose();
   }
 
@@ -82,7 +86,13 @@ class _ManualRecordScreenState extends State<ManualRecordScreen> {
     if (!_formKey.currentState!.validate()) return;
     final to = int.parse(_page.text);
     final from = book.currentPage;
-    s.recordManual(book: book, date: _date, minutes: _minutes, toPage: to);
+    s.recordManual(
+      book: book,
+      date: _date,
+      minutes: _minutes,
+      toPage: to,
+      summary: _summary.text,
+    );
 
     final updated = Book(
       id: book.id,
@@ -149,6 +159,7 @@ class _ManualRecordScreenState extends State<ManualRecordScreen> {
                             _bookId = id;
                             final picked = books.firstWhere((b) => b.id == id);
                             _page.text = '${picked.currentPage}';
+                            _summary.text = picked.summary;
                           });
                         },
                       ),
@@ -210,6 +221,14 @@ class _ManualRecordScreenState extends State<ManualRecordScreen> {
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 12),
+            LabeledField(
+              label: '지금까지의 줄거리',
+              controller: _summary,
+              hint: '여기까지 읽은 내용을 짧게 정리해 보세요.\n다음에 이어 읽기 전에 다시 보여 드려요.',
+              maxLines: 6,
+              minLines: 4,
             ),
             const SizedBox(height: 24),
           ],

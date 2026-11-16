@@ -75,7 +75,9 @@ class ReadMateApp extends StatelessWidget {
                 editing: ModalRoute.of(ctx)?.settings.arguments as Book?,
               ),
           Routes.timeSelect: (_) => const TimeSelectScreen(),
-          Routes.timer: (_) => const TimerScreen(),
+          Routes.timer: (ctx) => TimerScreen(
+                minutes: ModalRoute.of(ctx)?.settings.arguments as int?,
+              ),
           Routes.record: (_) => const RecordScreen(),
           Routes.reward: (_) => const RewardScreen(),
           Routes.recap: (_) => const RecapScreen(),

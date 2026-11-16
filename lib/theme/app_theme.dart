@@ -43,8 +43,7 @@ class AppText {
   static TextStyle get bodySub => _noto(14, FontWeight.w400, AppColors.subText);
   static TextStyle get caption => _noto(12, FontWeight.w400, AppColors.subText);
   static TextStyle get timer => _noto(64, FontWeight.w500);
-  static TextStyle get bubble =>
-      GoogleFonts.gaegu(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.text);
+  static TextStyle get bubble => _noto(15, FontWeight.w700); // 말풍선 (본문과 같은 Noto Sans KR)
 }
 
 ThemeData buildAppTheme() {

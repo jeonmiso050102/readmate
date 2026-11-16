@@ -154,7 +154,10 @@ class ReadingState extends ChangeNotifier {
     });
 
     _userSub = _userDoc.snapshots().listen((snap) {
-      final s = (snap.data()?['settings'] as Map<String, dynamic>?) ?? const {};
+      // 아직 저장 중인 내 변경이 있으면, 그 사이 도착한 옛 값으로 덮어쓰지 않음
+      if (snap.metadata.hasPendingWrites) return;
+      final raw = snap.data()?['settings'];
+      final s = raw is Map ? Map<String, dynamic>.from(raw) : const <String, dynamic>{};
       _currentId = s['currentBookId'] as String?;
       goalMinutes = (s['goalMinutes'] as num?)?.toInt() ?? 15;
       nextGoalMinutes = (s['nextGoalMinutes'] as num?)?.toInt() ?? goalMinutes + 10;
@@ -186,6 +189,14 @@ class ReadingState extends ChangeNotifier {
 
   Future<void> _saveSettings() async {
     if (_uid == null) return;
+    try {
+      await _saveSettingsRaw();
+    } catch (e) {
+      debugPrint('설정을 저장하지 못했어요 (Firestore 규칙을 확인해 주세요): $e');
+    }
+  }
+
+  Future<void> _saveSettingsRaw() async {
     await _userDoc.set({
       'settings': {
         'currentBookId': _currentId,
@@ -232,6 +243,7 @@ class ReadingState extends ChangeNotifier {
     Color? color,
     int? currentPage,
     String? memo,
+    String? summary,
   }) async {
     if (_uid == null || book.id.isEmpty) return;
     await _booksCol.doc(book.id).update({
@@ -240,6 +252,7 @@ class ReadingState extends ChangeNotifier {
       if (color != null) 'color': color.toARGB32(),
       if (currentPage != null) 'currentPage': currentPage,
       if (memo != null) 'memo': memo,
+      if (summary != null) 'summary': summary,
     });
   }
 
@@ -307,11 +320,12 @@ class ReadingState extends ChangeNotifier {
     required DateTime date,
     required int minutes,
     required int toPage,
+    String? summary,
   }) async {
     final from = book.currentPage;
     final to = toPage.clamp(0, book.totalPages);
     logSession(book: book, date: date, minutes: minutes, fromPage: from, toPage: to, manual: true);
-    await updateBook(book, currentPage: to);
+    await updateBook(book, currentPage: to, summary: summary?.trim());
   }
 
   /// 06 독서 기록 저장

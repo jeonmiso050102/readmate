@@ -321,18 +321,22 @@ class CharacterShelf extends StatelessWidget {
   final bool highlightLast; // 09 완독: 방금 꽂은 책 테두리
   final String? bubble;
 
-  // 책장 크기 (캔버스 345x380 기준): 새싹이 몸 아래로 조금 내려오도록 키움
-  static const _canvasH = 380.0;
-  static const _rowH = 96.0; // 책 칸 높이
-  static const _rowInner = 249.0; // 책 칸 안쪽 너비 (261 - 좌우 여백 12)
-  static const _decoSize = 56.0;
+  // 책장 크기 (캔버스 345x340 기준): 새싹이 몸 안에 들어가는 최대 크기
+  // 얼굴(볼·입) 바로 아래에서 시작해 몸 아래쪽 곡선 안쪽까지
+  static const _canvasH = 340.0;
+  static const _shelfRect = Rect.fromLTWH(40, 142, 265, 186);
+  static const _shelfPad = 10.0;
+  static const _rowGap = 8.0;
+  static const _rowH = 79.0; // 책 칸 높이: (186 - 10*2 - 8) / 2
+  static const _rowInner = 233.0; // 책 칸 안쪽 너비: 265 - 10*2 - 6*2
+  static const _decoSize = 52.0;
   static const _gap = 3.0;
 
-  /// 책 두께: 쪽수에 비례 (100쪽 ≈ 18, 300쪽 ≈ 30, 500쪽 ≈ 42, 최대 44)
-  static double thicknessOf(Book b) => (12 + b.totalPages * 0.06).clamp(16.0, 44.0).toDouble();
+  /// 책 두께: 쪽수에 비례 (100쪽 ≈ 16.5, 300쪽 ≈ 27.5, 500쪽 ≈ 38.5, 최대 40)
+  static double thicknessOf(Book b) => (11 + b.totalPages * 0.055).clamp(15.0, 40.0).toDouble();
 
-  /// 책 높이: 74~90 사이에서 책마다 조금씩 다르게
-  static double heightOf(Book b) => 74.0 + (b.title.hashCode.abs() % 5) * 4;
+  /// 책 높이: 60~76 사이에서 책마다 조금씩 다르게
+  static double heightOf(Book b) => 60.0 + (b.title.hashCode.abs() % 5) * 4;
 
   @override
   Widget build(BuildContext context) {
@@ -351,7 +355,7 @@ class CharacterShelf extends StatelessWidget {
     final rest = books.sublist(i);
     var cap = _rowInner - decoW;
     final restW = rest.fold<double>(0, (a, b) => a + thicknessOf(b) + _gap);
-    if (restW > cap) cap -= 40; // '+N권' 배지 자리
+    if (restW > cap) cap -= 37; // '+N권' 배지 자리
     final row2 = <Book>[];
     var used2 = 0.0;
     for (final b in rest) {
@@ -362,12 +366,12 @@ class CharacterShelf extends StatelessWidget {
     }
     final hidden = rest.length - row2.length;
     final emptySlots =
-        hidden > 0 ? 0 : ((cap - used2) / (22 + _gap)).floor().clamp(0, 3).toInt();
+        hidden > 0 ? 0 : ((cap - used2) / (20 + _gap)).floor().clamp(0, 3).toInt();
 
     Widget spine(Book b) {
       final w = thicknessOf(b);
       final h = heightOf(b);
-      final fontSize = w < 20 ? 10.0 : (w < 28 ? 11.0 : 12.0);
+      final fontSize = w < 19 ? 9.5 : (w < 26 ? 10.5 : 11.5);
       final lineH = fontSize * 1.12;
       final fit = ((h - 8) / lineH).floor();
       final chars = b.title.replaceAll(' ', '').characters.toList();
@@ -405,8 +409,8 @@ class CharacterShelf extends StatelessWidget {
     }
 
     Widget emptySpine() => Container(
-          width: 22,
-          height: 78,
+          width: 20,
+          height: 64,
           margin: const EdgeInsets.only(right: 3),
           child: const DashedBox(color: AppColors.card, borderColor: AppColors.tan, radius: 3),
         );
@@ -428,13 +432,10 @@ class CharacterShelf extends StatelessWidget {
       child: Stack(
         children: [
           SvgPicture.asset('assets/svg/sprout_big.svg', width: 345, height: 340),
-          Positioned(
-            left: 30,
-            top: 146,
-            width: 285,
-            height: 226,
+          Positioned.fromRect(
+            rect: _shelfRect,
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(_shelfPad),
               decoration: BoxDecoration(
                 color: AppColors.shelf,
                 borderRadius: BorderRadius.circular(22),
@@ -442,13 +443,13 @@ class CharacterShelf extends StatelessWidget {
               child: Column(
                 children: [
                   shelfRow([for (final b in row1) spine(b)]),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: _rowGap),
                   shelfRow([
                     for (final b in row2) spine(b),
                     if (hidden > 0)
                       Container(
-                        width: 37,
-                        height: 24,
+                        width: 34,
+                        height: 22,
                         margin: const EdgeInsets.only(right: _gap, bottom: 4),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(

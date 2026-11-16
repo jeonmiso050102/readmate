@@ -12,14 +12,17 @@ import '../widgets/common.dart';
 
 /// 05 타이머
 class TimerScreen extends StatefulWidget {
-  const TimerScreen({super.key});
+  const TimerScreen({super.key, this.minutes});
+
+  /// 04에서 고른 읽기 시간(분). 없으면 저장된 목표 시간
+  final int? minutes;
 
   @override
   State<TimerScreen> createState() => _TimerScreenState();
 }
 
 class _TimerScreenState extends State<TimerScreen> {
-  late final int _total = context.read<ReadingState>().goalMinutes * 60;
+  late final int _total = (widget.minutes ?? context.read<ReadingState>().goalMinutes) * 60;
   late int _remaining = _total;
   Timer? _ticker;
 
@@ -116,7 +119,7 @@ class _TimerScreenState extends State<TimerScreen> {
             const SizedBox(height: 8),
             Text(book?.title ?? '', style: AppText.bodyBold),
             const SizedBox(height: 8),
-            Text('${s.goalMinutes}분 목표', style: AppText.subLabel),
+            Text('${_total ~/ 60}분 목표', style: AppText.subLabel),
             const SizedBox(height: 8),
             // 개발 중에는 시간을 길게 눌러 바로 완료할 수 있어요.
             GestureDetector(
