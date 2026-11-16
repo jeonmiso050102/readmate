@@ -23,12 +23,15 @@ class _AddBookScreenState extends State<AddBookScreen> {
   final _formKey = GlobalKey<FormState>();
   late final Book? _editing = widget.editing;
   late final _title = TextEditingController(text: _editing?.title ?? '');
-  late final _pages = TextEditingController(text: _editing?.totalPages.toString() ?? '');
+  late final _pages = TextEditingController(
+    text: (_editing?.totalPages ?? 0) > 0 ? _editing!.totalPages.toString() : '',
+  );
   late final _readPages = TextEditingController(text: _editing?.currentPage.toString() ?? '0');
   late int _color = _initialColorIndex();
   bool _saving = false;
 
-  bool get _isEdit => _editing != null;
+  /// 저장된 책(id 있음)이면 수정 모드, id가 없는 Book이면 제목 등을 미리 채운 추가 모드
+  bool get _isEdit => (_editing?.id ?? '').isNotEmpty;
 
   int _initialColorIndex() {
     final c = _editing?.color;

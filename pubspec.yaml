@@ -17,6 +17,8 @@ dependencies:
   provider: ^6.1.2
   flutter_svg: ^2.0.10
   google_fonts: ^6.2.1
+  firebase_ai: ^2.0.0 # Firebase AI Logic (Gemini) - firebase_core 3.x와 호환되는 버전
+  http: ^1.2.0 # Google Books API 호출
 
 dev_dependencies:
   flutter_test:
