@@ -19,13 +19,16 @@ flutter run
 
 Firebase 콘솔에서 할 일:
 1. **Authentication → 로그인 방법 → 이메일/비밀번호** 사용 설정
-2. **Firestore Database** 생성 후 아래 규칙 적용 (회원가입 시 `users/{uid}`에 닉네임 저장)
+2. **Firestore Database** 생성 후 아래 규칙 적용
+   - `users/{uid}`: 닉네임, 설정(목표 시간·장식·현재 책)
+   - `users/{uid}/books/{bookId}`: 책 제목, 총 쪽수, 표지 색, 읽은 쪽수, 메모, 상태(toRead/done)
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{uid} {
+    // 내 프로필·설정(users/{uid})과 내 책(users/{uid}/books/...)만 읽고 쓸 수 있음
+    match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
   }
@@ -88,5 +91,11 @@ FlutterFlow는 일반 Flutter 프로젝트를 통째로 가져오는(import) 기
 5. 구현이 복잡한 컴포넌트(`CharacterShelf`, `ProgressBook`, `StackedBook`)는
    **Custom Code → Custom Widgets**에 해당 클래스 코드를 붙여 넣어 재사용할 수 있어요
    (의존성 `flutter_svg`, `google_fonts`를 Custom Code 설정에 추가).
-6. 독서 데이터(책 목록·진도·메모)는 현재 `state/reading_state.dart`에서 메모리로 관리합니다.
-   FlutterFlow에서는 Firestore 컬렉션 `users/{uid}/books`(title, totalPages, color, currentPage, memo, status)로 만들어 연결하는 것을 권장합니다.
+6. 독서 데이터는 Firestore `users/{uid}/books`(title, totalPages, color, currentPage, memo, status, createdAt, finishedAt)에 저장돼요.
+   FlutterFlow에서도 같은 컬렉션 구조로 만들면 데이터를 그대로 이어서 쓸 수 있어요.
+
+## 5. 책 관리
+
+- 새 계정은 책장과 읽을 책 더미가 **빈 상태**로 시작해요. 홈의 「첫 책 추가하기」나 읽을 책 탭의 「책 추가하기」로 추가해요.
+- **책 정보 수정:** 읽을 책 더미에서 책을 눌러 고른 뒤 **한 번 더 누르거나 길게 누르면** 수정 화면이 열려요. 홈의 「지금 읽는 책」 카드에 있는 **수정**으로도 열 수 있어요.
+  제목, 총 쪽수, 지금까지 읽은 쪽, 표지 색을 바꿀 수 있고, 같은 화면에서 책을 삭제할 수도 있어요.

@@ -13,7 +13,8 @@ class RecapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final book = context.watch<ReadingState>().current!;
+    final book = context.watch<ReadingState>().current;
+    if (book == null) return const SizedBox.shrink();
     return SunScaffold(
       bottom: PrimaryButton(
         label: '이어서 읽기',

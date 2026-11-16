@@ -140,7 +140,9 @@ class _RecoTile extends StatelessWidget {
             tooltip: '읽을 책에 추가',
             onPressed: () {
               context.read<ReadingState>().addBook(
-                    Book(title: reco.title, totalPages: reco.pages, color: reco.color),
+                    title: reco.title,
+                    totalPages: reco.pages,
+                    color: reco.color,
                   );
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('「${reco.title}」을(를) 읽을 책 더미에 쌓았어요')),

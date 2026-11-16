@@ -134,6 +134,7 @@ class StackedBook extends StatelessWidget {
     this.width,
     this.selected = false,
     this.onTap,
+    this.onLongPress,
   });
 
   final String title;
@@ -142,11 +143,13 @@ class StackedBook extends StatelessWidget {
   final double? width;
   final bool selected;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         width: width,

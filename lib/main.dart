@@ -29,7 +29,7 @@ class Routes {
   static const login = '/login';
   static const signup = '/signup';
   static const home = '/home'; // 01 / 03 / 11 탭
-  static const addBook = '/add-book'; // 02
+  static const addBook = '/add-book'; // 02 (arguments: Book이면 수정 모드)
   static const timeSelect = '/time-select'; // 04
   static const timer = '/timer'; // 05
   static const record = '/record'; // 06
@@ -58,7 +58,9 @@ class ReadMateApp extends StatelessWidget {
           Routes.login: (_) => const LoginScreen(),
           Routes.signup: (_) => const SignupScreen(),
           Routes.home: (_) => const MainShell(),
-          Routes.addBook: (_) => const AddBookScreen(),
+          Routes.addBook: (ctx) => AddBookScreen(
+                editing: ModalRoute.of(ctx)?.settings.arguments as Book?,
+              ),
           Routes.timeSelect: (_) => const TimeSelectScreen(),
           Routes.timer: (_) => const TimerScreen(),
           Routes.record: (_) => const RecordScreen(),

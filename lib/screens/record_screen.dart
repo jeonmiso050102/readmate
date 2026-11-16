@@ -47,9 +47,10 @@ class _RecordScreenState extends State<RecordScreen> {
   void _save() {
     if (!_formKey.currentState!.validate()) return;
     final s = context.read<ReadingState>();
-    s.recordProgress(page: int.parse(_page.text), memo: _memo.text);
+    final page = int.parse(_page.text);
+    s.recordProgress(page: page, memo: _memo.text);
     final nav = Navigator.of(context);
-    if (_book.isFinished) {
+    if (page >= _book.totalPages) {
       nav.pushReplacementNamed(Routes.finished); // 09 완독
     } else if (s.lastSessionCompleted) {
       nav.pushReplacementNamed(Routes.reward); // 07 목표 달성 보상

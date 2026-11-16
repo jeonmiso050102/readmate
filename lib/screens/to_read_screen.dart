@@ -49,21 +49,36 @@ class ToReadScreen extends StatelessWidget {
                 const SizedBox(height: 6),
                 const Sprout(mood: SproutMood.sleep, width: 120),
                 const SizedBox(height: 3),
-                if (books.isEmpty)
+                if (s.loading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  )
+                else if (books.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Text('쌓아 둔 책이 없어요. 책을 추가해 보세요!', style: AppText.bodySub),
+                    child: Text('아직 쌓아 둔 책이 없어요.\n아래 「책 추가하기」로 첫 책을 쌓아 보세요!',
+                        style: AppText.bodySub, textAlign: TextAlign.center),
                   ),
                 for (var i = 0; i < books.length; i++) ...[
                   StackedBook(
                     title: books[i].title,
-                    trailing: books[i] == s.current && books[i].isStarted
-                        ? '읽는 중'
+                    trailing: books[i].isStarted
+                        ? '${books[i].currentPage}/${books[i].totalPages}쪽'
                         : '${books[i].totalPages}쪽',
                     color: books[i].color,
                     width: c.maxWidth * _widthRatios[i % _widthRatios.length],
-                    selected: books[i] == s.current,
-                    onTap: () => s.selectBook(books[i]),
+                    selected: s.isCurrent(books[i]),
+                    // 한 번 누르면 이번에 읽을 책으로 선택, 선택된 책을 다시 누르면 정보 수정
+                    onTap: () {
+                      if (s.isCurrent(books[i])) {
+                        Navigator.of(context).pushNamed(Routes.addBook, arguments: books[i]);
+                      } else {
+                        s.selectBook(books[i]);
+                      }
+                    },
+                    onLongPress: () =>
+                        Navigator.of(context).pushNamed(Routes.addBook, arguments: books[i]),
                   ),
                   const SizedBox(height: 3),
                 ],
@@ -78,7 +93,9 @@ class ToReadScreen extends StatelessWidget {
             );
           }),
           const SizedBox(height: 8),
-          Text('책을 눌러 이번에 읽을 책을 고를 수 있어요', style: AppText.caption),
+          if (books.isNotEmpty)
+            Text('책을 눌러 이번에 읽을 책을 고르고, 고른 책을 한 번 더 누르면 정보를 수정할 수 있어요',
+                style: AppText.caption),
           const SizedBox(height: 16),
         ],
       ),

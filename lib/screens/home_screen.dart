@@ -7,7 +7,6 @@ import '../state/reading_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/book_widgets.dart';
 import '../widgets/common.dart';
-import 'main_shell.dart';
 
 /// 01 홈 · 캐릭터 책장
 class HomeScreen extends StatelessWidget {
@@ -67,9 +66,12 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Text('지금 읽는 책이 없어요', style: AppText.bodyBold),
                       const SizedBox(height: 4),
-                      Text('읽을 책 더미에서 다음 책을 골라 보세요', style: AppText.bodySub),
+                      Text('읽고 싶은 책을 쌓아 두고 새싹이와 함께 읽어 봐요', style: AppText.bodySub),
                       const SizedBox(height: 8),
-                      PrimaryButton(label: '읽을 책 고르기', onPressed: () => shellTab.value = 1),
+                      PrimaryButton(
+                        label: '첫 책 추가하기',
+                        onPressed: () => Navigator.of(context).pushNamed(Routes.addBook),
+                      ),
                     ],
                   )
                 : Column(
@@ -82,7 +84,23 @@ class HomeScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('지금 읽는 책', style: AppText.caption),
+                                Row(
+                                  children: [
+                                    Text('지금 읽는 책', style: AppText.caption),
+                                    const SizedBox(width: 6),
+                                    GestureDetector(
+                                      onTap: () => Navigator.of(context)
+                                          .pushNamed(Routes.addBook, arguments: book),
+                                      child: Text(
+                                        '수정',
+                                        style: AppText.caption.copyWith(
+                                          color: AppColors.primary,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                                 Text(book.title, style: AppText.bodyBold),
                               ],
                             ),

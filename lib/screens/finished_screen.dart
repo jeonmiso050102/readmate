@@ -8,17 +8,35 @@ import '../widgets/book_widgets.dart';
 import '../widgets/common.dart';
 
 /// 09 완독
-class FinishedScreen extends StatelessWidget {
+class FinishedScreen extends StatefulWidget {
   const FinishedScreen({super.key});
+
+  @override
+  State<FinishedScreen> createState() => _FinishedScreenState();
+}
+
+class _FinishedScreenState extends State<FinishedScreen> {
+  // 화면을 연 순간의 책을 기억해 둠 ('책장에 꽂기' 후 current가 다음 책으로 바뀌어도 그대로 보이게)
+  late final Book? _book = () {
+    final b = context.read<ReadingState>().current;
+    if (b == null) return null;
+    return Book(
+      id: b.id,
+      title: b.title,
+      totalPages: b.totalPages,
+      color: b.color,
+      currentPage: b.totalPages,
+      isDone: true,
+    );
+  }();
 
   @override
   Widget build(BuildContext context) {
     final s = context.watch<ReadingState>();
-    // '책장에 꽂기' 직후에는 current가 바뀌므로, 화면이 닫히는 동안에는 마지막으로 꽂은 책을 보여 줌
-    final book = s.current ?? (s.shelf.isNotEmpty ? s.shelf.last : null);
+    final book = _book;
     if (book == null) return const SizedBox.shrink();
     // 미리 보기: 기존 책장 + 방금 다 읽은 책
-    final preview = [...s.shelf, if (!s.shelf.contains(book)) book];
+    final preview = [...s.shelf.where((b) => b.id != book.id), book];
     return SunScaffold(
       bottom: Column(
         mainAxisSize: MainAxisSize.min,
