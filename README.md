@@ -1,5 +1,8 @@
 # 📚 리드메이트 (ReadMate) — 완독 습관 앱
 
+### ▶ 바로 실행해 보기: **https://readmate-79026.web.app**
+설치 없이 휴대폰 · PC 브라우저에서 열고 회원가입하면 바로 쓸 수 있어요. (휴대폰에서는 「홈 화면에 추가」하면 앱처럼 사용 가능)
+
 > 집중력을 키워 **한 권을 끝까지 읽는 경험**을 돕는 독서 앱
 > 디자인씽킹(공감 → 문제정의 → 아이디어) → Figma 시안 → Flutter 구현 → 사용자 피드백 반영
 
@@ -28,9 +31,9 @@
 - **Firebase AI Logic (Gemini)** — 맞춤 책 추천 (JSON 구조화 응답, 자동 재시도 · 다른 모델로 전환)
 - **Google Books API** — 추천 책 검증, 쪽수 자동 입력
 
-## 실행 방법
+## 직접 빌드해서 실행하기 (개발자용)
 
-[Flutter SDK](https://docs.flutter.dev/get-started/install)가 설치되어 있어야 합니다.
+설치 없이 써 보려면 위의 웹 주소를 이용하세요. 코드를 직접 실행하려면 [Flutter SDK](https://docs.flutter.dev/get-started/install)가 설치되어 있어야 합니다.
 
 ```bash
 git clone <이 저장소 주소>
