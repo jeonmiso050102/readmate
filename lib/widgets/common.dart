@@ -4,19 +4,23 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_theme.dart';
 
-/// 모든 화면 공통: 크림색 배경 + 상단 '햇살 배경' 그라데이션(높이 340)
+/// 모든 화면 공통: 따뜻한 크림색 벽 + 위쪽 햇살 그라데이션 + 비스듬한 햇빛 줄기
+///
+/// [background]를 주면 그 위에(내용 뒤에) 그림 배경을 깔 수 있어요. (예: 홈의 서재 풍경)
 class SunScaffold extends StatelessWidget {
   const SunScaffold({
     super.key,
     required this.body,
     this.bottom,
     this.bottomNavigationBar,
+    this.background,
     this.padding = const EdgeInsets.fromLTRB(24, 16, 24, 0),
   });
 
   final Widget body;
   final Widget? bottom; // 화면 하단 고정 버튼 영역
   final Widget? bottomNavigationBar;
+  final Widget? background;
   final EdgeInsets padding;
 
   @override
@@ -26,23 +30,28 @@ class SunScaffold extends StatelessWidget {
       bottomNavigationBar: bottomNavigationBar,
       body: Stack(
         children: [
+          // 위쪽에서 들어오는 따뜻한 햇살
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: 340,
+            height: 380,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.sun.withValues(alpha: 0.75),
+                    AppColors.sun.withValues(alpha: 0.55),
                     AppColors.sun.withValues(alpha: 0),
                   ],
                 ),
               ),
             ),
+          ),
+          if (background != null) Positioned.fill(child: background!),
+          const Positioned.fill(
+            child: IgnorePointer(child: CustomPaint(painter: SunRayPainter())),
           ),
           SafeArea(
             bottom: bottomNavigationBar == null,
@@ -68,26 +77,76 @@ class SunScaffold extends StatelessWidget {
   }
 }
 
-/// 갈색 채움 버튼 (높이 54, radius 16)
+/// 오른쪽 위 창문에서 비스듬히 들어오는 부드러운 햇빛 줄기
+class SunRayPainter extends CustomPainter {
+  const SunRayPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topRight,
+        end: Alignment.bottomLeft,
+        colors: [Colors.white.withValues(alpha: 0.32), Colors.white.withValues(alpha: 0)],
+      ).createShader(Offset.zero & size);
+    for (final (x, width) in [(1.02, 0.14), (0.80, 0.07), (0.64, 0.11)]) {
+      final path = Path()
+        ..moveTo(w * x, 0)
+        ..lineTo(w * (x + width), 0)
+        ..lineTo(w * (x + width) - h * 0.5, h * 0.7)
+        ..lineTo(w * x - h * 0.5, h * 0.7)
+        ..close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// 갈색 채움 버튼 (높이 54, 둥근 모서리 + 부드러운 그림자, 아이콘 선택)
 class PrimaryButton extends StatelessWidget {
-  const PrimaryButton({super.key, required this.label, this.onPressed, this.loading = false});
+  const PrimaryButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.loading = false,
+    this.iconAsset,
+  });
   final String label;
   final VoidCallback? onPressed;
   final bool loading;
+  final String? iconAsset; // 예: 'assets/svg/ic_book_open.svg'
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final enabled = onPressed != null && !loading;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
       width: double.infinity,
       height: 54,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: enabled
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.28),
+                  offset: const Offset(0, 6),
+                  blurRadius: 14,
+                ),
+              ]
+            : null,
+      ),
       child: ElevatedButton(
         onPressed: loading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
+          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.45),
           foregroundColor: AppColors.card,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         child: loading
             ? const SizedBox(
@@ -95,7 +154,16 @@ class PrimaryButton extends StatelessWidget {
                 height: 22,
                 child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.card),
               )
-            : Text(label, style: AppText.bodyBold.copyWith(color: AppColors.card)),
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (iconAsset != null) ...[
+                    SvgPicture.asset(iconAsset!, width: 22, height: 22),
+                    const SizedBox(width: 10),
+                  ],
+                  Text(label, style: AppText.bodyBold.copyWith(color: AppColors.card)),
+                ],
+              ),
       ),
     );
   }
@@ -117,7 +185,7 @@ class OutlineButtonX extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: AppColors.card,
           side: const BorderSide(color: AppColors.primary, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         child: Text(label, style: AppText.bodyBold.copyWith(color: AppColors.primary)),
       ),
@@ -282,7 +350,8 @@ class SpeechBubble extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: AppColors.card,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border, width: 1),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF8C6633).withValues(alpha: 0.16),
@@ -356,7 +425,9 @@ class AppCard extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: color ?? AppColors.card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1.2),
+        boxShadow: AppColors.softShadow(),
       ),
       child: child,
     );

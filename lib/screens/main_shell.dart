@@ -17,6 +17,9 @@ class MainShell extends StatelessWidget {
       valueListenable: shellTab,
       builder: (context, index, _) {
         return Scaffold(
+          // 떠 있는 둥근 하단 바 뒤로 배경이 이어지게
+          extendBody: true,
+          backgroundColor: Colors.transparent,
           body: IndexedStack(
             index: index,
             children: const [HomeScreen(), ToReadScreen(), RecommendScreen()],

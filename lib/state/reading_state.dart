@@ -129,6 +129,26 @@ extension ShelfDecoInfo on ShelfDeco {
       };
 }
 
+/// 책상 소품 (홈 책장 양옆): 완독한 책 수가 채워지면 꾸미기에서 열려요
+enum DeskProp { mug, vase }
+
+extension DeskPropInfo on DeskProp {
+  String get label => switch (this) {
+        DeskProp.mug => '새싹 머그컵',
+        DeskProp.vase => '데이지 꽃병',
+      };
+  String get asset => switch (this) {
+        DeskProp.mug => 'assets/svg/bg_mug.svg',
+        DeskProp.vase => 'assets/svg/bg_vase.svg',
+      };
+
+  /// 열리는 조건: 완독한 책 수
+  int get unlockBooks => switch (this) {
+        DeskProp.mug => 3,
+        DeskProp.vase => 5,
+      };
+}
+
 /// 로그인한 사용자의 독서 데이터를 Firestore와 동기화
 ///
 /// - 책: `users/{uid}/books/{bookId}`
@@ -158,6 +178,7 @@ class ReadingState extends ChangeNotifier {
   int nextGoalMinutes = 25;
   Set<ShelfDeco> ownedDecorations = {};
   ShelfDeco? placedDecoration;
+  Set<DeskProp> placedDeskProps = {}; // 책상 위에 놓은 소품 (기본은 없음)
   bool aiEnabled = true;
   int readerLevel = 0; // 0 초보자, 1 중급자, 2 고급자
 
@@ -228,6 +249,10 @@ class ReadingState extends ChangeNotifier {
           .toSet();
       final placed = s['placedDecoration'] as String?;
       placedDecoration = ShelfDeco.values.where((d) => d.name == placed).firstOrNull;
+      placedDeskProps = ((s['deskProps'] as List?) ?? const [])
+          .map((n) => DeskProp.values.where((d) => d.name == n).firstOrNull)
+          .whereType<DeskProp>()
+          .toSet();
       aiEnabled = s['aiEnabled'] as bool? ?? true;
       readerLevel = (s['readerLevel'] as num?)?.toInt() ?? 0;
       notifyListeners();
@@ -241,6 +266,7 @@ class ReadingState extends ChangeNotifier {
     nextGoalMinutes = 25;
     ownedDecorations = {};
     placedDecoration = null;
+    placedDeskProps = {};
     aiEnabled = true;
     readerLevel = 0;
     lastSessionMinutes = 0;
@@ -265,6 +291,7 @@ class ReadingState extends ChangeNotifier {
         'nextGoalMinutes': nextGoalMinutes,
         'ownedDecorations': ownedDecorations.map((d) => d.name).toList(),
         'placedDecoration': placedDecoration?.name,
+        'deskProps': placedDeskProps.map((d) => d.name).toList(),
         'aiEnabled': aiEnabled,
         'readerLevel': readerLevel,
       },
@@ -500,6 +527,32 @@ class ReadingState extends ChangeNotifier {
       'finishedAt': DateTime.now().millisecondsSinceEpoch,
     });
   }
+
+  bool isDeskPropUnlocked(DeskProp p) => shelf.length >= p.unlockBooks;
+
+  void setDeskProps(Set<DeskProp> props) {
+    placedDeskProps = props.where(isDeskPropUnlocked).toSet();
+    notifyListeners();
+    _saveSettings();
+  }
+
+  /// 완독한 해 목록 (최근 해가 앞)
+  List<int> get shelfYears {
+    final years = {
+      for (final b in shelf)
+        if (b.finishedAt > 0) DateTime.fromMillisecondsSinceEpoch(b.finishedAt).year,
+    }.toList()
+      ..sort((a, b) => b.compareTo(a));
+    return years;
+  }
+
+  /// [year]가 null이면 전체, 아니면 그 해에 완독한 책
+  List<Book> shelfOf(int? year) => year == null
+      ? shelf
+      : shelf
+          .where((b) =>
+              b.finishedAt > 0 && DateTime.fromMillisecondsSinceEpoch(b.finishedAt).year == year)
+          .toList();
 
   void placeDecoration(ShelfDeco? d) {
     placedDecoration = d;

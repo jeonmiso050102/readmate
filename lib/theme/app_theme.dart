@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Figma 시안(리드메이트 완독 습관 앱)에서 추출한 색상 토큰
 class AppColors {
-  static const background = Color(0xFFFCF6D7); // 화면 배경
+  static const background = Color(0xFFFBF1DC); // 화면 배경 (따뜻한 크림)
   static const sun = Color(0xFFEFC49F); // 햇살 배경 / 선택 강조
   static const text = Color(0xFF4A3A28); // 기본 텍스트
   static const subText = Color(0xFF786A52); // 보조 텍스트
@@ -18,14 +18,41 @@ class AppColors {
   static const spine = Color(0xFF86A1AB); // 진행 책 책등
   static const checkbox = Color(0xFFC5CF9E);
 
+  // ---- 동화풍 서재 리디자인 팔레트 ----
+  static const cream = Color(0xFFFBF1DC); // 벽(배경)
+  static const sage = Color(0xFF8FAE6B); // 세이지 그린 (강조, 진행률)
+  static const sageDark = Color(0xFF6F8F4A); // 세이지 그린 (글자)
+  static const sageLight = Color(0xFFDCE8C8);
+  static const pink = Color(0xFFF4C6C6); // 파스텔 핑크
+  static const blue = Color(0xFFB9CBEA); // 파스텔 블루
+  static const woodLight = Color(0xFFE8C79E); // 책장 나무(밝은)
+  static const wood = Color(0xFFD2A574); // 책장 나무
+  static const woodDark = Color(0xFFAE7C4E); // 책장 테두리·선반
+  static const shelfInner = Color(0xFFF8ECD6); // 책장 칸 안쪽
+  static const desk = Color(0xFFE2BE8E); // 책상
+
+  /// 카드·버튼 공통 부드러운 그림자
+  static List<BoxShadow> softShadow([double strength = 1]) => [
+        BoxShadow(
+          color: const Color(0xFF8C6633).withValues(alpha: 0.10 * strength),
+          offset: const Offset(0, 8),
+          blurRadius: 24,
+        ),
+        BoxShadow(
+          color: const Color(0xFF8C6633).withValues(alpha: 0.06 * strength),
+          offset: const Offset(0, 2),
+          blurRadius: 6,
+        ),
+      ];
+
   /// 표지 색 팔레트 (02 책 쌓아 두기)
   static const bookColors = <Color>[
-    Color(0xFFC5CF9E),
-    Color(0xFFD0ABC5),
-    Color(0xFFF9BDA6),
-    Color(0xFFA1B5DB),
-    Color(0xFFF7E4AF),
-    Color(0xFFE1A2A5),
+    Color(0xFFC5D6A8), // 세이지
+    Color(0xFFD7C3E6), // 라벤더
+    Color(0xFFF4C6C6), // 핑크
+    Color(0xFFB9CBEA), // 블루
+    Color(0xFFF7E4AF), // 버터
+    Color(0xFFF3CDB0), // 피치
   ];
 }
 
