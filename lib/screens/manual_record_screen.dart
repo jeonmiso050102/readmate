@@ -5,13 +5,12 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import '../state/reading_state.dart';
 import '../theme/app_theme.dart';
+import '../utils/date_format.dart';
 import '../widgets/common.dart';
+import '../widgets/summary_history.dart';
 
-/// 11월 16일 (월)
-String formatKoreanDate(DateTime d) {
-  const week = ['월', '화', '수', '목', '금', '토', '일'];
-  return '${d.month}월 ${d.day}일 (${week[d.weekday - 1]})';
-}
+export '../utils/date_format.dart';
+
 
 /// 13 화면으로 넘길 기록 결과
 class ManualRecordResult {
@@ -45,9 +44,8 @@ class _ManualRecordScreenState extends State<ManualRecordScreen> {
   late final _page = TextEditingController(
     text: '${context.read<ReadingState>().current?.currentPage ?? 0}',
   );
-  late final _summary = TextEditingController(
-    text: context.read<ReadingState>().current?.summary ?? '',
-  );
+  // 줄거리는 기록할 때마다 새 칸으로 쌓이므로 빈 칸에서 시작
+  final _summary = TextEditingController();
 
   @override
   void dispose() {
@@ -159,7 +157,6 @@ class _ManualRecordScreenState extends State<ManualRecordScreen> {
                             _bookId = id;
                             final picked = books.firstWhere((b) => b.id == id);
                             _page.text = '${picked.currentPage}';
-                            _summary.text = picked.summary;
                           });
                         },
                       ),
@@ -224,12 +221,18 @@ class _ManualRecordScreenState extends State<ManualRecordScreen> {
             ),
             const SizedBox(height: 12),
             LabeledField(
-              label: '지금까지의 줄거리',
+              label: '이번에 읽은 부분의 줄거리',
               controller: _summary,
-              hint: '여기까지 읽은 내용을 짧게 정리해 보세요.\n다음에 이어 읽기 전에 다시 보여 드려요.',
+              hint: '이번에 읽은 내용을 짧게 정리해 보세요.\n날짜별로 쌓여서 다음에 이어 읽기 전에 다시 보여 드려요.',
               maxLines: 6,
               minLines: 4,
             ),
+            if (book != null) ...[
+              const SizedBox(height: 16),
+              Text('지난 줄거리', style: AppText.label.copyWith(color: AppColors.primary)),
+              const SizedBox(height: 8),
+              SummaryHistory(book: book, initialCount: 2),
+            ],
             const SizedBox(height: 24),
           ],
         ),

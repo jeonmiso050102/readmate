@@ -6,6 +6,7 @@ import '../state/reading_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/book_widgets.dart';
 import '../widgets/common.dart';
+import '../widgets/summary_history.dart';
 
 /// 08 이어 읽기 전 회고
 class RecapScreen extends StatelessWidget {
@@ -33,18 +34,13 @@ class RecapScreen extends StatelessWidget {
           const SizedBox(height: 12),
           ProgressBook(book: book),
           const SizedBox(height: 12),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('지금까지의 줄거리', style: AppText.label.copyWith(color: AppColors.primary)),
-                const SizedBox(height: 4),
-                Text(
-                  book.summary.isEmpty ? '아직 줄거리 요약이 없어요.' : book.summary,
-                  style: AppText.body,
-                ),
-              ],
-            ),
+          // 날짜별로 쌓인 줄거리 (최근 날짜가 위, 많으면 더보기)
+          Text('지금까지의 줄거리', style: AppText.label.copyWith(color: AppColors.primary)),
+          const SizedBox(height: 8),
+          SummaryHistory(
+            book: book,
+            emptyText: '아직 적어 둔 줄거리가 없어요.\n「수동으로 기록하기」에서 날짜별로 줄거리를 남길 수 있어요.',
+            allowDelete: true,
           ),
           const SizedBox(height: 12),
           AppCard(

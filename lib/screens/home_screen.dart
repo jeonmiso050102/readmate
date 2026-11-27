@@ -57,6 +57,8 @@ class HomeScreen extends StatelessWidget {
             books: s.shelf,
             decoration: s.placedDecoration,
             bubble: '오늘도 조금 더!',
+            // 다 읽은 책을 누르면 그 책의 독서 기록·줄거리 보기
+            onBookTap: (b) => Navigator.of(context).pushNamed(Routes.bookDetail, arguments: b),
           ),
           const SizedBox(height: 10),
           AppCard(

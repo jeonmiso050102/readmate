@@ -314,12 +314,16 @@ class CharacterShelf extends StatelessWidget {
     this.decoration,
     this.highlightLast = false,
     this.bubble,
+    this.onBookTap,
   });
 
   final List<Book> books;
   final ShelfDeco? decoration;
   final bool highlightLast; // 09 완독: 방금 꽂은 책 테두리
   final String? bubble;
+
+  /// 책등을 눌렀을 때 (없으면 제목·쪽수 말풍선만 보여 줌)
+  final ValueChanged<Book>? onBookTap;
 
   // 책장 크기 (캔버스 345x340 기준): 새싹이 몸 안에 들어가는 최대 크기
   // 얼굴(볼·입) 바로 아래에서 시작해 몸 아래쪽 곡선 안쪽까지
@@ -379,8 +383,10 @@ class CharacterShelf extends StatelessWidget {
       final highlight = highlightLast && identical(b, books.last); // 방금 꽂은 책
       return Tooltip(
         message: '${b.title} · ${b.totalPages}쪽',
-        triggerMode: TooltipTriggerMode.tap,
-        child: Container(
+        triggerMode: onBookTap == null ? TooltipTriggerMode.tap : TooltipTriggerMode.longPress,
+        child: GestureDetector(
+          onTap: onBookTap == null ? null : () => onBookTap!(b),
+          child: Container(
           width: w,
           height: h,
           margin: const EdgeInsets.only(right: _gap),
@@ -404,6 +410,7 @@ class CharacterShelf extends StatelessWidget {
                 ),
             ],
           ),
+        ),
         ),
       );
     }

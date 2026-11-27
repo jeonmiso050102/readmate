@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 import 'screens/add_book_screen.dart';
+import 'screens/book_detail_screen.dart';
 import 'screens/decorate_screen.dart';
 import 'screens/finished_screen.dart';
 import 'screens/login_screen.dart';
@@ -41,6 +42,7 @@ class Routes {
   static const finished = '/finished'; // 09 (arguments: Book, 없으면 지금 읽는 책)
   static const decorate = '/decorate'; // 10
   static const manualRecord = '/manual-record'; // 12
+  static const bookDetail = '/book-detail'; // 책 기록 (arguments: Book)
   static const manualDone = '/manual-done'; // 13 (arguments: ManualRecordResult)
 }
 
@@ -84,6 +86,11 @@ class ReadMateApp extends StatelessWidget {
           Routes.finished: (_) => const FinishedScreen(),
           Routes.decorate: (_) => const DecorateScreen(),
           Routes.manualRecord: (_) => const ManualRecordScreen(),
+          Routes.bookDetail: (ctx) {
+            final b = ModalRoute.of(ctx)?.settings.arguments;
+            // 새로고침 등으로 책 정보 없이 열리면 홈으로
+            return b is Book ? BookDetailScreen(book: b) : const MainShell();
+          },
           Routes.manualDone: (_) => const ManualDoneScreen(),
         },
       ),

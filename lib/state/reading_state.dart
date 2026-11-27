@@ -53,6 +53,67 @@ class Book {
   }
 }
 
+/// 줄거리 기록 한 칸 (`users/{uid}/books/{bookId}/summaries/{id}`)
+class SummaryEntry {
+  const SummaryEntry({
+    required this.id,
+    required this.text,
+    required this.date,
+    required this.page,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String text;
+  final DateTime date; // 읽은 날짜
+  final int page; // 이 줄거리를 적을 때 읽은 쪽
+  final int createdAt;
+
+  factory SummaryEntry.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data() ?? const {};
+    return SummaryEntry(
+      id: doc.id,
+      text: d['text'] as String? ?? '',
+      date: DateTime.fromMillisecondsSinceEpoch((d['date'] as num?)?.toInt() ?? 0),
+      page: (d['page'] as num?)?.toInt() ?? 0,
+      createdAt: (d['createdAt'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+/// 독서 기록 한 건 (`users/{uid}/sessions/{id}`): 타이머 또는 수동 기록
+class ReadingSession {
+  const ReadingSession({
+    required this.date,
+    required this.minutes,
+    required this.fromPage,
+    required this.toPage,
+    required this.manual,
+    required this.createdAt,
+  });
+
+  final DateTime date;
+  final int minutes;
+  final int fromPage;
+  final int toPage;
+  final bool manual;
+  final int createdAt;
+
+  int get pagesRead => (toPage - fromPage).clamp(0, 100000);
+
+  factory ReadingSession.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data() ?? const {};
+    return ReadingSession(
+      date: DateTime.fromMillisecondsSinceEpoch((d['date'] as num?)?.toInt() ?? 0),
+      minutes: (d['minutes'] as num?)?.toInt() ?? 0,
+      fromPage: (d['fromPage'] as num?)?.toInt() ?? 0,
+      toPage: (d['toPage'] as num?)?.toInt() ?? 0,
+      manual: d['manual'] as bool? ?? false,
+      createdAt: (d['createdAt'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 enum ShelfDeco { pot, frame, lamp }
 
 extension ShelfDecoInfo on ShelfDeco {
@@ -314,6 +375,64 @@ class ReadingState extends ChangeNotifier {
     });
   }
 
+  // ---------------------------------------------------------------- 줄거리 기록
+
+  /// 책의 줄거리 기록 (읽은 날짜가 최근인 것부터)
+  Stream<List<SummaryEntry>> summariesOf(Book book) {
+    if (_uid == null || book.id.isEmpty) return Stream.value(const []);
+    return _booksCol
+        .doc(book.id)
+        .collection('summaries')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) {
+      final list = snap.docs.map(SummaryEntry.fromDoc).toList();
+      // 같은 날이면 나중에 적은 것이 위로
+      list.sort((a, b) {
+        final byDate = b.date.compareTo(a.date);
+        return byDate != 0 ? byDate : b.createdAt.compareTo(a.createdAt);
+      });
+      return list;
+    });
+  }
+
+  /// 책의 독서 기록 (최근 날짜가 위)
+  Stream<List<ReadingSession>> sessionsOf(Book book) {
+    if (_uid == null || book.id.isEmpty) return Stream.value(const []);
+    // where 하나만 써서 별도 색인(index) 없이 동작하게 하고, 정렬은 앱에서
+    return _sessionsCol.where('bookId', isEqualTo: book.id).snapshots().map((snap) {
+      final list = snap.docs.map(ReadingSession.fromDoc).toList();
+      list.sort((a, b) {
+        final byDate = b.date.compareTo(a.date);
+        return byDate != 0 ? byDate : b.createdAt.compareTo(a.createdAt);
+      });
+      return list;
+    });
+  }
+
+  /// 줄거리 한 칸 추가 + 책의 '최신 줄거리'도 함께 갱신
+  Future<void> addSummary(
+    Book book, {
+    required String text,
+    required DateTime date,
+    required int page,
+  }) async {
+    final t = text.trim();
+    if (_uid == null || book.id.isEmpty || t.isEmpty) return;
+    await _booksCol.doc(book.id).collection('summaries').add({
+      'text': t,
+      'date': DateTime(date.year, date.month, date.day).millisecondsSinceEpoch,
+      'page': page,
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
+    });
+    await updateBook(book, summary: t);
+  }
+
+  Future<void> deleteSummary(Book book, SummaryEntry entry) async {
+    if (_uid == null || book.id.isEmpty) return;
+    await _booksCol.doc(book.id).collection('summaries').doc(entry.id).delete();
+  }
+
   /// 12 수동으로 기록하기: 진도 반영 + 기록 저장 (책장 장식 보상은 없음)
   Future<void> recordManual({
     required Book book,
@@ -325,7 +444,11 @@ class ReadingState extends ChangeNotifier {
     final from = book.currentPage;
     final to = toPage.clamp(0, book.totalPages);
     logSession(book: book, date: date, minutes: minutes, fromPage: from, toPage: to, manual: true);
-    await updateBook(book, currentPage: to, summary: summary?.trim());
+    await updateBook(book, currentPage: to);
+    // 줄거리는 덮어쓰지 않고 날짜별로 한 칸씩 쌓아 둠
+    if ((summary ?? '').trim().isNotEmpty) {
+      await addSummary(book, text: summary!, date: date, page: to);
+    }
   }
 
   /// 06 독서 기록 저장
