@@ -5,3 +5,7 @@ build/
 .idea/
 *.iml
 Claude outputs/
+
+# 발표 대본 (GitHub에 올리지 않음)
+docs/발표자료/발표_대본.md
+docs/발표자료/*녹화용*
