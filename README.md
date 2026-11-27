@@ -1,33 +1,95 @@
-# 리드메이트 (ReadMate) — Flutter 앱
+# 📚 리드메이트 (ReadMate) — 완독 습관 앱
 
-Figma 시안 「리드메이트 완독 습관 앱 화면 시안」의 13개 화면(로그인·회원가입 포함)을 Flutter로 구현한 프로젝트입니다.
-인증은 **Firebase 이메일/비밀번호**를 사용합니다.
+> 집중력을 키워 **한 권을 끝까지 읽는 경험**을 돕는 독서 앱
+> 디자인씽킹(공감 → 문제정의 → 아이디어) → Figma 시안 → Flutter 구현 → 사용자 피드백 반영
 
-## 1. 실행 방법
+**문제 정의:** 앱 사용자는 독서를 완독하기 위해 집중력 강화가 필요하다.
+**HMW:** 사용자가 어떻게 집중력을 강화할 수 있을까?
+
+---
+
+## 주요 기능
+
+| 아이디어 | 앱 기능 |
+|---|---|
+| 짧게라도 매일 읽는 습관 | 5 · 10 · 15분 타이머, 목표를 달성하면 다음 목표가 +10분 늘어남, 중간에 멈추면 「다음에 읽기」 |
+| 나만의 캐릭터 책장 | 새싹이가 올라앉은 나무 책장, 쪽수에 비례한 책 두께, 책등의 세로 제목, 전체/년도별 보기, 책이 많으면 ‹ 1 / 2 › 넘겨 보기 |
+| 두께 부담 줄이기 | 읽은 %만큼 불투명하게 차오르는 진행률 책 |
+| 중간 회고 | 이어 읽기 전에 지난 줄거리 카드 보기 (날짜별로 쌓이고, 많으면 더보기) |
+| 보상 | 완독 권수에 따라 화분 · 머그컵 · 꽃병이 열리는 책장 꾸미기 |
+| 필요한 사람만 쓰는 AI 추천 | Gemini가 내 책장과 레벨을 보고 추천 → Google Books로 실제 있는 책인지 검증 → 바로 읽을 책에 추가 |
+| 기타 | 이메일 회원가입/로그인, 책 추가 · 수정 · 삭제, 타이머 없이 읽은 기록 직접 입력, 다 읽은 책을 누르면 지난 기록 전체 보기 |
+
+## 기술 스택
+
+- **Flutter** (Dart) — Provider 상태관리, 이름 기반 라우팅, CustomPainter로 책장 · 햇살 직접 그리기
+- **Firebase Authentication** — 이메일/비밀번호 로그인
+- **Cloud Firestore** — 책, 독서 세션, 줄거리, 설정 실시간 저장
+- **Firebase AI Logic (Gemini)** — 맞춤 책 추천 (JSON 구조화 응답, 자동 재시도 · 다른 모델로 전환)
+- **Google Books API** — 추천 책 검증, 쪽수 자동 입력
+
+## 실행 방법
+
+[Flutter SDK](https://docs.flutter.dev/get-started/install)가 설치되어 있어야 합니다.
 
 ```bash
+git clone <이 저장소 주소>
 cd readmate
-flutter create . --org com.readmate --platforms android,ios,web   # 플랫폼 폴더 생성 (lib/는 그대로 유지됨)
 flutter pub get
-
-# Firebase 연결
-dart pub global activate flutterfire_cli
-flutterfire configure            # lib/firebase_options.dart 자동 생성(자리표시자 덮어쓰기)
-
-flutter run
+flutter run -d chrome --web-port 5000
 ```
 
-Firebase 콘솔에서 할 일:
-1. **Authentication → 로그인 방법 → 이메일/비밀번호** 사용 설정
-2. **Firestore Database** 생성 후 아래 규칙 적용
-   - `users/{uid}`: 닉네임, 설정(목표 시간·장식·현재 책)
-   - `users/{uid}/books/{bookId}`: 책 제목, 총 쪽수, 표지 색, 읽은 쪽수, 메모, 상태(toRead/done)
+- 실행 후 **회원가입**을 하면 빈 책장에서 시작합니다.
+- AI 추천의 Google Books 키는 `http://localhost/*`에서만 동작하도록 제한되어 있어서, 꼭 `localhost`로 실행해 주세요.
+
+## 폴더 구조
+
+```
+lib/
+├── main.dart                 # 앱 시작, 화면 경로(route), 로그인 상태 확인
+├── firebase_options.dart     # Firebase 연결 설정 (flutterfire configure로 생성)
+├── config/api_keys.dart      # Google Books 키, Gemini 모델 이름
+├── state/reading_state.dart  # 책 · 세션 · 줄거리 데이터와 Firestore 동기화
+├── services/recommend_service.dart  # Gemini 추천 + Google Books 검증
+├── theme/app_theme.dart      # 색상 · 글꼴
+├── widgets/                  # 공통 버튼 · 카드, 책장 · 진행률 책, 줄거리 기록
+└── screens/                  # 화면 17개 (아래 표)
+docs/                         # 발표 자료, 앱 화면 캡처, Figma 시안
+```
+
+## 화면 구성 (Figma 시안 ↔ 코드)
+
+| Figma 시안 | 파일 |
+|---|---|
+| 00 로그인 / 00 회원가입 | `login_screen.dart`, `signup_screen.dart` |
+| 01 홈 · 캐릭터 책장 | `home_screen.dart`, `main_shell.dart` (하단 탭) |
+| 02 책 쌓아 두기 | `add_book_screen.dart` (추가 · 수정 · 삭제) |
+| 03 읽을 책 더미 | `to_read_screen.dart` |
+| 04 읽기 시간 선택 | `time_select_screen.dart` |
+| 05 타이머 | `timer_screen.dart` |
+| 06 독서 기록 | `record_screen.dart` |
+| 07 목표 달성 보상 | `reward_screen.dart` |
+| 08 이어 읽기 전 회고 | `recap_screen.dart` |
+| 09 완독 | `finished_screen.dart` |
+| 10 책장 꾸미기 | `decorate_screen.dart` |
+| 11 AI 맞춤 추천 | `recommend_screen.dart` |
+| 12 수동으로 기록하기 / 13 수동 기록 완료 | `manual_record_screen.dart`, `manual_done_screen.dart` |
+| (추가) 책 기록 보기 | `book_detail_screen.dart` |
+
+## Firestore 데이터 구조와 보안 규칙
+
+```
+users/{uid}                          # 닉네임, 목표 시간, 꾸미기 설정, 지금 읽는 책
+users/{uid}/books/{bookId}           # 제목, 총 쪽수, 읽은 쪽, 표지 색, 상태, 완독일
+users/{uid}/books/{bookId}/summaries # 날짜별 줄거리
+users/{uid}/sessions                 # 독서 세션 (날짜, 읽은 시간, 쪽수, 메모)
+users/{uid}/meta/recommendations     # 저장된 AI 추천
+```
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 내 프로필·설정(users/{uid})과 내 책(users/{uid}/books/...)만 읽고 쓸 수 있음
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
@@ -35,67 +97,9 @@ service cloud.firestore {
 }
 ```
 
-> 개발 모드에서는 타이머 화면의 `07:42` 숫자를 **길게 누르면** 바로 완료되어 06 독서 기록 → 07 보상 흐름을 빠르게 확인할 수 있어요.
+로그인한 본인의 데이터만 읽고 쓸 수 있습니다.
 
-## 2. 화면 구성 (Figma 프레임 ↔ 파일)
+## 사용자 피드백 반영
 
-| Figma | 파일 | 이동 |
-|---|---|---|
-| 00 로그인 | `screens/login_screen.dart` | 로그인 → 01 / 회원가입 링크 → 00 회원가입 |
-| 00 회원가입 | `screens/signup_screen.dart` | 가입하기 → 01 / 로그인 링크 → 00 로그인 |
-| 01 홈 · 캐릭터 책장 | `screens/home_screen.dart` | 꾸미기 → 10 / 이어서 읽기 → 08 |
-| 02 책 쌓아 두기 | `screens/add_book_screen.dart` | 쌓기 → 03 |
-| 03 읽을 책 더미 | `screens/to_read_screen.dart` | 책 추가하기 → 02 / 읽기 시작 → 04(처음) 또는 08(이어 읽기) |
-| 04 읽기 시간 선택 | `screens/time_select_screen.dart` | 타이머 시작 → 05 |
-| 05 타이머 | `screens/timer_screen.dart` | 시간 종료 → 06 / 포기하기 → 01 |
-| 06 독서 기록 | `screens/record_screen.dart` | 마지막 쪽 → 09 / 목표 달성 → 07 |
-| 07 목표 달성 보상 | `screens/reward_screen.dart` | 책장에 놓기 → 10 / 나중에 → 01 |
-| 08 이어 읽기 전 회고 | `screens/recap_screen.dart` | 이어서 읽기 → 04 |
-| 09 완독 | `screens/finished_screen.dart` | 책장에 꽂기 → 01 / 다음 책 고르기 → 03 |
-| 10 책장 꾸미기 | `screens/decorate_screen.dart` | 저장하기 → 01 |
-| 11 AI 맞춤 추천 | `screens/recommend_screen.dart` | + → 03 (로그아웃 버튼도 이 화면 하단에 있음) |
-
-공통 요소는 `widgets/common.dart`(버튼, 입력 필드, 상단 바, 새싹이, 말풍선, 세그먼트)와
-`widgets/book_widgets.dart`(진행 책, 쌓인 책, 캐릭터 책장, 하단 탭바)에 있습니다.
-새싹이 캐릭터·장식·아이콘은 Figma에서 SVG로 내보내 `assets/svg/`에 넣었습니다.
-
-## 3. 디자인 토큰 (FlutterFlow Theme에 그대로 입력 가능)
-
-| 이름 | 값 | 용도 |
-|---|---|---|
-| Primary | `#8C5A36` | 주요 버튼, 선택 테두리 |
-| Background | `#FCF6D7` | 화면 배경 |
-| Sun | `#EFC49F` | 상단 햇살 그라데이션(75% → 0%), 선택된 시간 칩 |
-| Text | `#4A3A28` | 기본 텍스트 |
-| SubText | `#786A52` | 보조 텍스트 |
-| Card | `#FFFBEF` | 카드, 입력칸 |
-| Border | `#EFD8B4` | 입력칸 테두리(1.5) |
-| Beige | `#F5E3BD` | 진행 막대 배경, 세그먼트 배경 |
-| Green | `#7FA24A` | 진행 막대, 스위치 |
-| Link | `#2F6BC4` | 파란 링크 |
-
-글꼴: **Noto Sans KR**(26 Bold 제목 / 20 Bold / 16 Bold / 14 Medium·Regular / 12 Regular), 말풍선은 **Gaegu Bold 19**.
-모서리: 버튼 16, 입력칸 14, 카드 16, 쌓인 책 6.
-
-## 4. FlutterFlow로 옮기기
-
-FlutterFlow는 일반 Flutter 프로젝트를 통째로 가져오는(import) 기능이 없어서, 아래처럼 옮기면 가장 빠릅니다.
-
-1. **새 프로젝트 → Settings → Firebase**에서 같은 Firebase 프로젝트를 연결하고, **Authentication**에서 Email 로그인을 켭니다.
-   Entry Page = `Login`, Logged-In Page = `Home`으로 지정합니다.
-2. **Theme Settings**에 위 3번 색상·글꼴을 입력합니다.
-3. **Media Assets**에 `assets/svg/*.svg`를 업로드합니다.
-4. 각 화면을 위 2번 표의 이름으로 만들고, 같은 위젯 트리(Column → 카드/입력칸/버튼)를 배치합니다.
-   - 로그인 버튼 Action: **Auth → Log In (Email)**
-   - 가입하기 버튼 Action: **Auth → Create Account (Email)** → **Backend → Create Document (users)**
-5. 구현이 복잡한 컴포넌트(`CharacterShelf`, `ProgressBook`, `StackedBook`)는
-   **Custom Code → Custom Widgets**에 해당 클래스 코드를 붙여 넣어 재사용할 수 있어요
-   (의존성 `flutter_svg`, `google_fonts`를 Custom Code 설정에 추가).
-6. 독서 데이터는 Firestore `users/{uid}/books`(title, totalPages, color, currentPage, memo, status, createdAt, finishedAt)에 저장돼요.
-   FlutterFlow에서도 같은 컬렉션 구조로 만들면 데이터를 그대로 이어서 쓸 수 있어요.
-
-## 5. 책 관리
-
-- 새 계정은 책장과 읽을 책 더미가 **빈 상태**로 시작해요. 홈의 「첫 책 추가하기」나 읽을 책 탭의 「책 추가하기」로 추가해요.
-- **책 정보 수정:** 읽을 책 더미에서 책을 눌러 고른 뒤 **한 번 더 누르거나 길게 누르면** 수정 화면이 열려요. 홈의 「지금 읽는 책」 카드에 있는 **수정**으로도 열 수 있어요.
-  제목, 총 쪽수, 지금까지 읽은 쪽, 표지 색을 바꿀 수 있고, 같은 화면에서 책을 삭제할 수도 있어요.
+개발 중 직접 써 보며 받은 피드백 20건을 모두 반영했습니다. (자세한 표는 `docs/발표자료` 참고)
+예: 고른 시간이 타이머에 반영되지 않던 문제 수정, 「지금 읽을 시간」 상자 추가, 책등 제목 · 두께 표시, 줄거리 누적 보기, 년도별 책장 보기 등
